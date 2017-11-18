@@ -1,4 +1,5 @@
 function main(){
+	window.alert("a");
 	var canvas = getElementById('example');
 	if(!canvas){
 		console.log("failed to retrive <canvas> element");
