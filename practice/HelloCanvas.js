@@ -6,6 +6,7 @@ function main(){
 	}
 
 	var gl = getWebGLContext(canvas);
+	
 	if(!gl){
 		console.log("failed to get rendering context for WebGL");
 		return;
