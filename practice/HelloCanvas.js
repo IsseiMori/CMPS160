@@ -4,7 +4,7 @@ function main(){
 		console.log("failed to retrive <canvas> element");
 		return;
 	}
-	
+
 	var gl = getWebGLContext(canvas);
 
 	if(!gl){
