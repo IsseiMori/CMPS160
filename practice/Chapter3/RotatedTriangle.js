@@ -1,6 +1,6 @@
 var VSHADER_SOURCE = 
 	'attribute vec4 a_Position;\n' +
-	'uniform flaot u_CosB, u_SinB;\n' + 
+	'uniform float u_CosB, u_SinB;\n' + 
 	'void main(){\n' + 
 	'	gl_Position.x = a_Position.x * u_CosB - a_Position.y * u_SinB;\n' +
 	'	gl_Position.y = a_Position.x * u_SinB - a_Position.y * u_CosB;\n' +
@@ -45,15 +45,10 @@ function main(){
 	var sinB = Math.sin(radian);
 
 	var u_CosB = gl.getUniformLocation(gl.program, 'u_CosB');
+	var u_SinB = gl.getUniformLocation(gl.program, 'u_SinB');
 
-	var u_Translation = gl.getUniformLocation(gl.program, 'u_Translation');
-	if(u_Translation < 0){
-		console.log("failed to get u_Translation");
-		return;
-	}
-
-	gl.uniform4f(u_Translation, Tx, Ty, Tz, 0.0);
-
+	gl.uniform1f(u_CosB, cosB);
+	gl.uniform1f(u_SinB, sinB);
 	
 	gl.clearColor(0.5,0.5,0.5,1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
