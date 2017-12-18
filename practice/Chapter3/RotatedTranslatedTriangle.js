@@ -1,8 +1,8 @@
 var VSHADER_SOURCE = 
 	'attribute vec4 a_Position;\n' +
-	'uniform mat4 u_xformMatrix;\n' + 
+	'uniform mat4 u_ModelMatrix;\n' + 
 	'void main(){\n' + 
-	'	gl_Position = u_xformMatrix * a_Position;\n' +
+	'	gl_Position = u_ModelMatrix * a_Position;\n' +
 	'}\n';
 
 var FSHADER_SOURCE = 
@@ -39,17 +39,13 @@ function main(){
 		return;
 	}
 
-	var xformMatrix = new Matrix4();
-	xformMatrix.setTranslate(Tx, Ty, Tz);
-	//xformMatrix.setRotate(ANGLE, 0, 0, 1);
+	var modelMatrix = new Matrix4();
+	modelMatrix.setRotate(ANGLE, 0, 0, 1);
+	modelMatrix.translate(Tx, 0.0, 0.0);
 
-	var u_xformMatrix = gl.getUniformLocation(gl.program, 'u_xformMatrix');
-	if(!u_xformMatrix){
-		console.log("failed to get u_xformMatrix");
-		return;
-	}
+	var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
 
-	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix.elements);
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 	
 	gl.clearColor(0.5,0.5,0.5,1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
