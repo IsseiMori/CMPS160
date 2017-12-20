@@ -53,7 +53,7 @@ function initVartexBuffers(gl){
 		0.5, 0.5, 1.0, 1.0,
 		0.5, -0.5, 1.0, 0.0
 		]);
-	var n = 3;
+	var n = 4;
 
 	var vertexTexCoordBuffer = gl.createBuffer();
 	if(!vertexTexCoordBuffer){
