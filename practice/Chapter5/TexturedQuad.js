@@ -120,6 +120,7 @@ function loadTexture(gl, n, texture, u_Sampler, image) {
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
 	gl.uniform1i(u_Sampler, 0);
 
+	gl.clear(0.5,0.5,0.5);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
 }
