@@ -23,12 +23,6 @@ function main(){
 		return;
 	}
 
-	var nf = document.getElementById('nearFar');
-	if(!nf){
-		console.log("failed to retrive <p> element");
-		return;
-	}
-
 	var gl = getWebGLContext(canvas);
 
 	if(!gl){
