@@ -59,7 +59,7 @@ function main(){
 	gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
 
 	gl.clearColor(0.5,0.5,0.5, 1.0);
-	gl.enable(gl.DEPTH_TEST);
+	gl.enable(gl.DEPTH_TEST); //
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	gl.drawArrays(gl.TRIANGLES, 0, n);
 
