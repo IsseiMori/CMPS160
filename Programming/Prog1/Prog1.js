@@ -1,18 +1,13 @@
 var VSHADER_SOURCE = 
 	'attribute vec4 a_Position;\n' +
-	'uniform mat4 u_xformMatrix;\n' + 
 	'void main(){\n' + 
-	'	gl_Position = u_xformMatrix * a_Position;\n' +
+	'	gl_Position = a_Position;\n' +
 	'}\n';
 
 var FSHADER_SOURCE = 
 	'void main(){\n' + 
-	'	gl_FragColor = vec4(1.0,1.0,0.0,1.0);\n' +
+	'	gl_FragColor = vec4(0.0,0.0,0.0,1.0);\n' +
 	'}\n';
-
-var ANGLE = 90.0;
-var Tx = 0.5, Ty = 0.5, Tz = 0.0;
-var Sx = 1.0, Sy = 1.5, Sz = 1.0;
 
 function main(){
 	var canvas = document.getElementById('webgl');
@@ -33,42 +28,71 @@ function main(){
 		return;
 	}
 
-	var n = initVartexBuffers(gl);
-	if(n < 0){
-		console.log("failed to set the positions of the vertices");
+	var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+	if(a_Position < 0){
+		console.log("failed to get a_Position");
 		return;
 	}
 
-	var divideMatrix = new Matrix4();
-	divideMatrix.setRotate(2, 0, 0, 1);
-	var xformMatrix = new Matrix4();
-	xformMatrix.setRotate(ANGLE, 0, 0, 1);
-	var xformMatrix1 = new Matrix4();
-	xformMatrix1.setRotate(ANGLE*2, 0, 0, 1);
-	xformMatrix1.multiply(xformMatrix);
-	console.log(xformMatrix1);
-	xformMatrix1.multiply(xformMatrix.invert());
-	console.log(xformMatrix1);
+	initVartexBuffers(gl, a_Position);
+	makeCircle(canvas);
 
-
-	var u_xformMatrix = gl.getUniformLocation(gl.program, 'u_xformMatrix');
-	if(!u_xformMatrix){
-		console.log("failed to get u_xformMatrix");
-		return;
+	canvas.onmousedown = function(ev){
+		if(ev.which == 3){
+			console.log(vertices);
+		}
+		click(ev, gl, canvas, a_Position);
 	}
 
-	gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix1.elements);
-	
 	gl.clearColor(0.5,0.5,0.5,1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
-	gl.drawArrays(gl.TRIANGLES, 0, n);
+	gl.drawArrays(gl.LINE_STRIP, 0, vertices.length / 3);
 }
 
-function initVartexBuffers(gl){
-	var vertices = new Float32Array([
-		0.0, 0.5, -0.5, -0.5, 0.5, -0.5
-		]);
-	var n = 3;
+var circle = [];
+function makeCircle(canvas){
+	var r;
+	var rad = Math.PI / 180.0;
+	if(canvas.width < canvas.height) r = canvas.width * 0.05;
+	else r = canvas.height * 0.05;
+
+	for(i = 0; i < 36; i+=3){
+		circle[i] = 0.05 * Math.sin(30.0 * (i/3) * rad);
+		circle[i+1] = 0;
+		circle[i+2] = 0.05 * Math.cos(30 * (i/3) * rad);
+	}
+}
+
+var prevAngle;
+var vertices = [0.0,0.0,0.0,1.0,1.0,1.0];
+function click(ev, gl, canvas, a_Position){
+	var x = ev.clientX;
+	var y = ev.clientY;
+	var rect = ev.target.getBoundingClientRect();
+	x = ((x - rect.left) - (canvas.width)/2)/(canvas.width/2);
+	y = ((canvas.height)/2 - (y - rect.top))/(canvas.height/2);
+	console.log(circle);
+
+	for(i = 0; i < 36; i+=3){
+		vertices.push(circle[i]+x);
+		vertices.push(circle[i+1]+y);
+		vertices.push(circle[i+2]);
+	}
+
+	console.log(vertices);
+
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
+
+	gl.enableVertexAttribArray(a_Position);
+
+	gl.clearColor(0.5,0.5,0.5,1.0);
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	gl.drawArrays(gl.LINE_STRIP, 0, vertices.length / 3);
+}
+
+function initVartexBuffers(gl, a_Position){
 
 	var vertexBuffer = gl.createBuffer();
 	if(!vertexBuffer){
@@ -78,17 +102,10 @@ function initVartexBuffers(gl){
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
 
-	gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-	var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-	if(a_Position < 0){
-		console.log("failed to get the storage location of a_Position");
-		return;
-	}
 
-	gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
 
 	gl.enableVertexAttribArray(a_Position);
-
-	return n;
 }
