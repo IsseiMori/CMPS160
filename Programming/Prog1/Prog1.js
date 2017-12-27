@@ -68,6 +68,7 @@ var prevAngle;
 var prevprevAngle;
 var vertices = []; //center point and 12 vertices -> pair of 39 vertices
 var prevPoint = [];
+var indices = [];
 function click(ev, gl, canvas, a_Position){
 	//convert canvas coordinate to webgl coordinate
 	var x = ev.clientX;
@@ -85,14 +86,13 @@ function click(ev, gl, canvas, a_Position){
 	//move the circle to the clicked point and push vertices to vertices array
 	if(prevAngle == null){
 		prevAngle = 0;
+		angle = 0;
 	}else{
 		//calculate the angle between current point and previous point
-		prevAngle = 180 / Math.PI * -Math.atan2(x - prevPoint[0], y - prevPoint[1]);
+		angle = 180 / Math.PI * -Math.atan2(x - prevPoint[0], y - prevPoint[1]);
 		//change the rotation of previous circle based on prevprevAngle and the current angle
-		if(prevprevAngle != null){
-			prevAngle = (prevAngle + prevprevAngle) / 2.0;
-		}
-		circleRotateMatrix.setRotate(prevAngle, 0, 0, 1);
+		circleRotateMatrix.setRotate((angle + prevprevAngle) / 2.0 - prevAngle , 0, 0, 1);
+		prevAngle = (angle + prevprevAngle) / 2.0;
 		for(i = -36; i < 0; i+=3){
 			tmpPoints[0] = vertices[vertices.length + i] - vertices[vertices.length - 39];
 			tmpPoints[1] = vertices[vertices.length + i + 1] - vertices[vertices.length - 38];
@@ -110,7 +110,7 @@ function click(ev, gl, canvas, a_Position){
 	vertices.push(y);
 	vertices.push(0);
 
-	angle = 180 / Math.PI * -Math.atan2(x - prevPoint[0], y - prevPoint[1]);;
+	//angle = prevAngle;
 	circleRotateMatrix.setRotate(angle, 0, 0, 1);
 	for(i = 0; i < 36; i+=3){
 		tmpPoints[0] = circle[i];
@@ -123,7 +123,24 @@ function click(ev, gl, canvas, a_Position){
 		vertices.push(tmp[1]+y);
 		vertices.push(tmp[2]);
 	}
-
+	
+	if(prevprevAngle != null){
+		for(i = 0; i < 11; i++){
+			indices.push(vertices[vertices.length] - 36 + i);
+			indices.push(vertices[vertices.length] - 75 + i);
+			indices.push(vertices[vertices.length] - 72 + i);
+			indices.push(vertices[vertices.length] - 36 + i);
+			indices.push(vertices[vertices.length] - 72 + i);
+			indices.push(vertices[vertices.length] - 33 + i);
+		}
+		indices.push(vertices[vertices.length] - 36 + i);
+		indices.push(vertices[vertices.length] - 75 + i);
+		indices.push(vertices[vertices.length] - 72);
+		indices.push(vertices[vertices.length] - 36 + i);
+		indices.push(vertices[vertices.length] - 72);
+		indices.push(vertices[vertices.length] - 33);
+	}
+ 
 	prevPoint[0] = x;
 	prevPoint[1] = y;
 
@@ -131,6 +148,7 @@ function click(ev, gl, canvas, a_Position){
 	prevAngle = angle;
 
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 
 	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
 
@@ -138,7 +156,9 @@ function click(ev, gl, canvas, a_Position){
 
 	gl.clearColor(0.5,0.5,0.5,1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
+	//console.log(indices);
 	gl.drawArrays(gl.LINE_STRIP, 0, vertices.length / 3);
+	//gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0);
 }
 
 function initVartexBuffers(gl, a_Position){
@@ -149,7 +169,14 @@ function initVartexBuffers(gl, a_Position){
 		return -1;
 	}
 
+	var indexBuffer = gl.createBuffer();
+	if(!indexBuffer){
+		console.log("failed to create the buffer object");
+		return -1;
+	}
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
