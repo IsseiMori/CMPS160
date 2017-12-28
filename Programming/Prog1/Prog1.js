@@ -28,25 +28,21 @@ function main(){
 		return;
 	}
 
-	var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-	if(a_Position < 0){
-		console.log("failed to get a_Position");
-		return;
-	}
+	var indexBuffer = gl.createBuffer();
+	var verticesBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, verticesBuffer);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
-	initVartexBuffers(gl, a_Position);
+	var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
 	makeCircle(canvas);
 
 	canvas.onmousedown = function(ev){
-		if(ev.which == 3){
-			console.log(vertices);
-		}
 		click(ev, gl, canvas, a_Position);
 	}
 
 	gl.clearColor(0.5,0.5,0.5,1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
-	gl.drawArrays(gl.LINE_STRIP, 0, vertices.length / 3);
+	//gl.drawArrays(gl.LINE_STRIP, 0, vertices.length / 3);
 }
 
 //make an array of 12 sided circle located at origin
@@ -69,6 +65,7 @@ var prevprevAngle;
 var vertices = []; //center point and 12 vertices -> pair of 39 vertices
 var prevPoint = [];
 var indices = [];
+
 function click(ev, gl, canvas, a_Position){
 	//convert canvas coordinate to webgl coordinate
 	var x = ev.clientX;
@@ -126,20 +123,24 @@ function click(ev, gl, canvas, a_Position){
 	
 	if(prevprevAngle != null){
 		for(i = 0; i < 11; i++){
-			indices.push(vertices[vertices.length] - 36 + i);
-			indices.push(vertices[vertices.length] - 75 + i);
-			indices.push(vertices[vertices.length] - 72 + i);
-			indices.push(vertices[vertices.length] - 36 + i);
-			indices.push(vertices[vertices.length] - 72 + i);
-			indices.push(vertices[vertices.length] - 33 + i);
+			indices.push(vertices.length / 3 - 12 + i);
+			indices.push(vertices.length / 3 - 24 + i);
+			indices.push(vertices.length / 3 - 23 + i);
+			//indices.push(vertices.length - 36 + i);
+			//indices.push(vertices.length - 72 + i);
+			//indices.push(vertices.length - 33 + i);
 		}
-		indices.push(vertices[vertices.length] - 36 + i);
-		indices.push(vertices[vertices.length] - 75 + i);
-		indices.push(vertices[vertices.length] - 72);
-		indices.push(vertices[vertices.length] - 36 + i);
-		indices.push(vertices[vertices.length] - 72);
-		indices.push(vertices[vertices.length] - 33);
+		/*indices.push(vertices.length - 36 + i);
+		indices.push(vertices.length - 75 + i);
+		indices.push(vertices.length - 72);
+		indices.push(vertices.length - 36 + i);
+		indices.push(vertices.length - 72);
+		indices.push(vertices.length - 33);*/
 	}
+
+	/*var vertices = new Float32Array([   // Vertex coordinates
+    	 0.5, 0.5, 0.5,  -0.5, 0.5, 0.5,  -0.5,-0.5, 0.5
+	]);*/
  
 	prevPoint[0] = x;
 	prevPoint[1] = y;
@@ -148,40 +149,13 @@ function click(ev, gl, canvas, a_Position){
 	prevAngle = angle;
 
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
 	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
-
 	gl.enableVertexAttribArray(a_Position);
+	console.log(vertices);
+	console.log(indices);
 
-	gl.clearColor(0.5,0.5,0.5,1.0);
+	gl.clearColor(0.5,0.5,0.5, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
-	//console.log(indices);
-	gl.drawArrays(gl.LINE_STRIP, 0, vertices.length / 3);
-	//gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0);
-}
-
-function initVartexBuffers(gl, a_Position){
-
-	var vertexBuffer = gl.createBuffer();
-	if(!vertexBuffer){
-		console.log("failed to create the buffer object");
-		return -1;
-	}
-
-	var indexBuffer = gl.createBuffer();
-	if(!indexBuffer){
-		console.log("failed to create the buffer object");
-		return -1;
-	}
-
-	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
-
-	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
-
-	gl.enableVertexAttribArray(a_Position);
+	gl.drawElements(gl.LINE_LOOP, indices.length, gl.UNSIGNED_BYTE, 0);
 }

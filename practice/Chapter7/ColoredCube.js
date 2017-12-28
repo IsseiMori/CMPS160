@@ -13,6 +13,7 @@ var FSHADER_SOURCE =
 	'varying vec4 v_Color;\n' +
 	'void main(){\n' + 
 	'	gl_FragColor = v_Color;\n' +
+
 	'}\n';
 
 function main(){
@@ -106,11 +107,11 @@ function initVertexBuffers(gl){
 		console.log("failed to create the buffer object");
 		return -1;
 	}
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
 	if(!initArrayBuffer(gl, vertices, 3, gl.FLOAT, 'a_Position')) return -1;
 	if(!initArrayBuffer(gl, colors, 3, gl.FLOAT, 'a_Color')) return -1;
 
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 
 	return indices.length;
