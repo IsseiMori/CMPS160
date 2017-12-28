@@ -3,15 +3,14 @@ var VSHADER_SOURCE =
 	'attribute vec4 a_Color;\n' +
 	'attribute vec4 a_Normal;\n' +
 	'uniform mat4 u_MvpMatrix;\n' +
-	'uniform vec3 u_LightColor;\n' +
+	'uniform mat4 u_NormalMatrix;\n' +
 	'uniform vec3 u_LightDirection;\n' +
 	'varying vec4 v_Color;\n' +
 	'void main(){\n' + 
 	'	gl_Position = u_MvpMatrix * a_Position;\n' +
-	'	vec3 normal = normalize(vec3(a_Normal));\n' +
-	'	float nDotL = max(dot(u_LightDirection, normal), 0.0);\n' +
-	'	vec3 diffuse = u_LightColor * vec3(a_Color) * nDotL;\n' + 
-	'	v_Color = vec4(diffuse, a_Color.a);\n' + 
+	'	vec4 normal = u_NormalMatrix * a_Normal;\n' +
+	'	float nDotL = max(dot(u_LightDirection, normalize(normal.xyz)), 0.0);\n' +
+	'	v_Color = vec4(a_Color.xyz * nDotL, a_Color.a);\n' + 
 	'}\n';
 
 var FSHADER_SOURCE = 
@@ -47,37 +46,50 @@ function main(){
 		return;
 	}
 
+	gl.clearColor(0.5,0.5,0.5, 1.0);
+	gl.enable(gl.DEPTH_TEST);
+
 	var u_MvpMatrix = gl.getUniformLocation(gl.program, 'u_MvpMatrix');
-	var u_LightColor= gl.getUniformLocation(gl.program, 'u_LightColor');
 	var u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
-	if(u_MvpMatrix < 0 || u_LightColor < 0 || u_LightDirection < 0){
-		console.log("failed to get the storage location of u_ attribute");
+	var u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
+	if(u_MvpMatrix < 0 || u_NormalMatrix < 0 || u_LightDirection < 0){
+		console.log("failed to get the storage location");
 		return;
 	}
 
-	//set light color to white
-	gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
+	var vpMatrix = new Matrix4();
+
+	//modelMatrix.setTranslate(0.75, 0.0, 0.0);
+	vpMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
+	vpMatrix.lookAt(3, 3, 7, 0, 0, 0, 0, 1, 0);
 
 	var lightDirection = new Vector3([0.5, 3.0, 4.0]);
 	lightDirection.normalize();
 	gl.uniform3fv(u_LightDirection, lightDirection.elements);
 
-	var projMatrix = new Matrix4();
-	var viewMatrix = new Matrix4();
+	var currentAngle = 0.0;
 	var modelMatrix = new Matrix4();
 	var mvpMatrix = new Matrix4();
+	var normalMatrix = new Matrix4();
 
-	//modelMatrix.setTranslate(0.75, 0.0, 0.0);
-	viewMatrix.setLookAt(3, 3, 7, 0, 0, 0, 0, 1, 0);
-	projMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
+	var tick = function(){
+		currentAngle = animate(currentAngle);
 
-	mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
-	gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+		modelMatrix.setRotate(currentAngle, 0, 1, 0);
+		mvpMatrix.set(vpMatrix).multiply(modelMatrix);
+		gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
 
-	gl.clearColor(0.5,0.5,0.5, 1.0);
-	gl.enable(gl.DEPTH_TEST);
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
+		normalMatrix.setInverseOf(modelMatrix);
+		normalMatrix.transpose();
+		gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+		gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
+
+		requestAnimationFrame(tick, canvas);
+	};
+	tick();
 }
 
 function initVertexBuffers(gl){
@@ -126,17 +138,19 @@ function initVertexBuffers(gl){
 	    20,21,22,  20,22,23     // back
 	]);
 
+	if(!initArrayBuffer(gl, vertices, 3, gl.FLOAT, 'a_Position')) return -1;
+	if(!initArrayBuffer(gl, colors, 3, gl.FLOAT, 'a_Color')) return -1;
+	if(!initArrayBuffer(gl, normals, 3, gl.FLOAT, 'a_Normal')) return -1;
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
 	var indexBuffer = gl.createBuffer();
 	if(!indexBuffer){
 		console.log("failed to create the buffer object");
 		return -1;
 	}
+
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-
-	if(!initArrayBuffer(gl, vertices, 3, gl.FLOAT, 'a_Position')) return -1;
-	if(!initArrayBuffer(gl, colors, 3, gl.FLOAT, 'a_Color')) return -1;
-	if(!initArrayBuffer(gl, normals, 3, gl.FLOAT, 'a_Normal')) return -1;
-
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 
 	return indices.length;
@@ -151,4 +165,15 @@ function initArrayBuffer(gl, data, num, type, attribute){
 	gl.enableVertexAttribArray(a_attribute);
 
 	return true;
+}
+
+var ANGLE_STEP = 30.0;
+var g_last = Date.now();
+function animate(angle){
+	var now = Date.now();
+	var elapsed = now - g_last;
+	g_last = now;
+
+	var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
+	return newAngle %= 360;
 }
