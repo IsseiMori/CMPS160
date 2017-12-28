@@ -123,24 +123,20 @@ function click(ev, gl, canvas, a_Position){
 	
 	if(prevprevAngle != null){
 		for(i = 0; i < 11; i++){
-			indices.push(vertices.length / 3 - 12 + i);
-			indices.push(vertices.length / 3 - 24 + i);
-			indices.push(vertices.length / 3 - 23 + i);
-			//indices.push(vertices.length - 36 + i);
-			//indices.push(vertices.length - 72 + i);
-			//indices.push(vertices.length - 33 + i);
+			indices.push(vertices.length / 3 - 26 + 14 + i);
+			indices.push(vertices.length / 3 - 26 + 1 + i); indices.push(vertices.length / 3 - 26 + 1 + i);
+			indices.push(vertices.length / 3 - 26 + 2 + i);
+			indices.push(vertices.length / 3 - 26 + 2 + i);
+			indices.push(vertices.length / 3 - 26 + 15 + i); indices.push(vertices.length / 3 - 26 + 15 + i);
+			indices.push(vertices.length / 3 - 26 + 14 + i);
 		}
-		/*indices.push(vertices.length - 36 + i);
-		indices.push(vertices.length - 75 + i);
-		indices.push(vertices.length - 72);
-		indices.push(vertices.length - 36 + i);
-		indices.push(vertices.length - 72);
-		indices.push(vertices.length - 33);*/
+		indices.push(vertices.length / 3 - 26 + 25);
+		indices.push(vertices.length / 3 - 26 + 12); indices.push(vertices.length / 3 - 26 + 12);
+		indices.push(vertices.length / 3 - 26 + 1);
+		indices.push(vertices.length / 3 - 26 + 1);
+		indices.push(vertices.length / 3 - 26 + 14); indices.push(vertices.length / 3 - 26 + 14);
+		indices.push(vertices.length / 3 - 26 + 25);
 	}
-
-	/*var vertices = new Float32Array([   // Vertex coordinates
-    	 0.5, 0.5, 0.5,  -0.5, 0.5, 0.5,  -0.5,-0.5, 0.5
-	]);*/
  
 	prevPoint[0] = x;
 	prevPoint[1] = y;
@@ -157,5 +153,5 @@ function click(ev, gl, canvas, a_Position){
 
 	gl.clearColor(0.5,0.5,0.5, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
-	gl.drawElements(gl.LINE_LOOP, indices.length, gl.UNSIGNED_BYTE, 0);
+	gl.drawElements(gl.LINES, indices.length, gl.UNSIGNED_BYTE, 0);
 }
