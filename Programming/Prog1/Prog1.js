@@ -103,11 +103,12 @@ function click(ev, gl, canvas, a_Position){
 		}
 	}
 
+	//store the ceter point into vertices
 	vertices.push(x);
 	vertices.push(y);
 	vertices.push(0);
 
-	//angle = prevAngle;
+	//modify the previous angle
 	circleRotateMatrix.setRotate(angle, 0, 0, 1);
 	for(i = 0; i < 36; i+=3){
 		tmpPoints[0] = circle[i];
@@ -121,6 +122,7 @@ function click(ev, gl, canvas, a_Position){
 		vertices.push(tmp[2]);
 	}
 	
+	//make polygon indeces
 	if(prevprevAngle != null){
 		for(i = 0; i < 11; i++){
 			indices.push(vertices.length / 3 - 26 + 14 + i);
@@ -138,9 +140,11 @@ function click(ev, gl, canvas, a_Position){
 		indices.push(vertices.length / 3 - 26 + 25);
 	}
  
+ 	//store the center point
 	prevPoint[0] = x;
 	prevPoint[1] = y;
 
+	//store the angle
 	prevprevAngle = prevAngle;
 	prevAngle = angle;
 
