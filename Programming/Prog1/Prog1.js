@@ -110,6 +110,7 @@ function click(ev, gl, canvas, a_Position){
 
 	//modify the previous angle
 	circleRotateMatrix.setRotate(angle, 0, 0, 1);
+	console.log(angle, prevAngle);
 	for(i = 0; i < 36; i+=3){
 		tmpPoints[0] = circle[i];
 		tmpPoints[1] = circle[i+1];
@@ -152,8 +153,8 @@ function click(ev, gl, canvas, a_Position){
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
 	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(a_Position);
-	console.log(vertices);
-	console.log(indices);
+	//console.log(vertices);
+	//console.log(indices);
 
 	gl.clearColor(0.5,0.5,0.5, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
