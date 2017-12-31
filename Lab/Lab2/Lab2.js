@@ -51,7 +51,7 @@ function main(){
 	}
 
 	//set lightDirection
-	var lightDirection = new Vector3(0.5, 3.0, 4.0);
+	var lightDirection = new Vector3([0.5, 3.0, 4.0]);
 	lightDirection.normalize();
 	gl.uniform3fv(u_LightDirection, lightDirection.elements);
 
@@ -137,9 +137,6 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 	vertices.push(x);
 	vertices.push(y);
 	vertices.push(0);
-	normals.push(-99);
-	normals.push(-99);
-	normals.push(-99);
 
 	//store new circle
 	circleRotateMatrix.setRotate(angle, 0, 0, 1);
@@ -153,9 +150,6 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 		vertices.push(tmp[0]+x);
 		vertices.push(tmp[1]+y);
 		vertices.push(tmp[2]);
-		normals.push(-99);
-		normals.push(-99);
-		normals.push(-99);
 	}
 	
 	//make polygon indeces
@@ -192,10 +186,10 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(a_Position);
 
-	/*gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+	gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 	gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(a_Normal);*/
+	gl.enableVertexAttribArray(a_Normal);
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
@@ -214,13 +208,7 @@ function calculateNormals(){
 	var y = []; //first vector
 	var n = []; //result normal vector
 	if(vertices.length > 39){
-		normals[vertices.length - 39] = 0;
-		normals[vertices.length - 39 + 1] = 0;
-		normals[vertices.length - 39 + 2] = 0;
-		normals[vertices.length - 78] = 0;
-		normals[vertices.length - 78 + 1] = 0;
-		normals[vertices.length - 78 + 2] = 0;
-		for(i = 3; i < 36; i+=3){
+		for(i = 3; i <= 36; i+=3){
 			x[0] = vertices[vertices.length - 78 + i] - vertices[vertices.length - 39 + i];
 			x[1] = vertices[vertices.length - 39 + 1 + i] - vertices[vertices.length - 39 + 1 + i];
 			x[2] = vertices[vertices.length - 39 + 2 + i] - vertices[vertices.length - 39 + 2 + i];
@@ -238,8 +226,9 @@ function calculateNormals(){
 			normals[vertices.length - 39 + i + 1] = n[1];
 			normals[vertices.length - 39 + i + 2] = n[2];
 		}
+		console.log(vertices.length - 39 + i + 2);
 		if(vertices.length > 78){
-			for(i = 3; i < 36; i+=3){
+			for(i = 3; i <= 36; i+=3){
 				x[0] = vertices[vertices.length - 156 + i] - vertices[vertices.length - 117 + i];
 				x[1] = vertices[vertices.length - 117 + 1 + i] - vertices[vertices.length - 117 + 1 + i];
 				x[2] = vertices[vertices.length - 117 + 2 + i] - vertices[vertices.length - 117 + 2 + i];
