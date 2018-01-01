@@ -35,6 +35,8 @@ function main(){
 		return;
 	}
 
+	gl.enable(gl.DEPTH_TEST);
+
 	//initialize buffers
 	var indexBuffer = gl.createBuffer();
 	var verticesBuffer = gl.createBuffer();
@@ -62,22 +64,35 @@ function main(){
 	}
 
 	gl.clearColor(0.5,0.5,0.5,1.0);
-	gl.clear(gl.COLOR_BUFFER_BIT);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	//gl.drawArrays(gl.LINE_STRIP, 0, vertices.length / 3);
 }
 
 //make an array of 12 sided circle located at origin
 var circle = [];
 function makeCircle(canvas){
+	//2 vertices for each side
+	//72 vertices in total
 	var r;
 	var rad = Math.PI / 180.0;
 	if(canvas.width < canvas.height) r = canvas.width * 0.05;
 	else r = canvas.height * 0.05;
 
 	for(i = 0; i < 36; i+=3){
-		circle[i] = 0.05 * Math.sin(30.0 * (i/3) * rad);
-		circle[i+1] = 0;
-		circle[i+2] = 0.05 * Math.cos(30 * (i/3) * rad);
+		circle.push(0.05 * Math.sin(30.0 * (i/3) * rad));
+		circle.push(0.0);
+		circle.push(0.05 * Math.cos(30 * (i/3) * rad));
+		//copy coordinate for next side
+		if(i > 0){
+			circle.push(0.05 * Math.sin(30.0 * (i/3) * rad));
+			circle.push(0.0);
+			circle.push(0.05 * Math.cos(30 * (i/3) * rad));
+		}
+		if(i == 33){
+			circle.push(circle[0]);
+			circle.push(circle[1]);
+			circle.push(circle[2]);
+		}
 	}
 }
 
@@ -86,6 +101,12 @@ var prevprevAngle;
 var vertices = []; //center point and 12 vertices -> pair of 39 vertices
 var prevPoint = [];
 var indices = [];
+//  48---49 26---27
+//   |   |   |   |
+//   |___|   |___|
+//	23   24  1    2
+//
+//
 var normals = [];
 
 function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Normal){
@@ -112,22 +133,23 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 		//change the rotation of previous circle based on prevprevAngle and the current angle
 		circleRotateMatrix.setRotate((angle + prevprevAngle) / 2.0 - prevAngle , 0, 0, 1);
 		prevAngle = (angle + prevprevAngle) / 2.0;
-		for(i = -36; i < 0; i+=3){
-			tmpPoints[0] = vertices[vertices.length + i] - vertices[vertices.length - 39];
-			tmpPoints[1] = vertices[vertices.length + i + 1] - vertices[vertices.length - 38];
-			tmpPoints[2] = vertices[vertices.length + i + 2] - vertices[vertices.length - 37];
+		for(i = -75; i < 0; i+=3){
+			//calculate object coordinate
+			tmpPoints[0] = vertices[vertices.length + i] - vertices[vertices.length - 75];
+			tmpPoints[1] = vertices[vertices.length + i + 1] - vertices[vertices.length - 74];
+			tmpPoints[2] = vertices[vertices.length + i + 2] - vertices[vertices.length - 73];
 			v3 = new Vector3(tmpPoints);
 			v3 = circleRotateMatrix.multiplyVector3(v3);
 			tmp = new Float32Array(v3.elements);
-			vertices[vertices.length + i] = tmp[0] + vertices[vertices.length - 39];
-			vertices[vertices.length + i + 1] = tmp[1] + vertices[vertices.length - 38];
-			vertices[vertices.length + i + 2] = tmp[2] + vertices[vertices.length - 37];
+			vertices[vertices.length + i] = tmp[0] + vertices[vertices.length - 75];
+			vertices[vertices.length + i + 1] = tmp[1] + vertices[vertices.length - 74];
+			vertices[vertices.length + i + 2] = tmp[2] + vertices[vertices.length - 73];
 		}
 
 		//copy the circle vertices for the next polygon
-		if(vertices.length > 39){
+		if(vertices.length > 75){
 			var currentLength = vertices.length;
-			for(i = -39; i < 0; i++){
+			for(i = -75; i < 0; i++){
 				vertices.push(vertices[currentLength + i]);
 			}
 		}
@@ -140,7 +162,7 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 
 	//store new circle
 	circleRotateMatrix.setRotate(angle, 0, 0, 1);
-	for(i = 0; i < 36; i+=3){
+	for(i = 0; i < 72; i+=3){
 		tmpPoints[0] = circle[i];
 		tmpPoints[1] = circle[i+1];
 		tmpPoints[2] = circle[i+2];
@@ -154,22 +176,15 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 	
 	//make polygon indeces
 	if(prevprevAngle != null){
-		for(i = 0; i < 11; i++){
-			indices.push(vertices.length / 3 - 26 + 14 + i);
-			indices.push(vertices.length / 3 - 26 + 1 + i);
-			indices.push(vertices.length / 3 - 26 + 2 + i);
-			indices.push(vertices.length / 3 - 26 + 2 + i);
-			indices.push(vertices.length / 3 - 26 + 15 + i);
-			indices.push(vertices.length / 3 - 26 + 14 + i);
+		for(i = 0; i < 24; i+=2){
+			indices.push(vertices.length / 3 - 50 + 26 + i);
+			indices.push(vertices.length / 3 - 50 + 1 + i);
+			indices.push(vertices.length / 3 - 50 + 2 + i);
+			indices.push(vertices.length / 3 - 50 + 2 + i);
+			indices.push(vertices.length / 3 - 50 + 27 + i);
+			indices.push(vertices.length / 3 - 50 + 26 + i);
 		}
-		indices.push(vertices.length / 3 - 26 + 25);
-		indices.push(vertices.length / 3 - 26 + 12);
-		indices.push(vertices.length / 3 - 26 + 1);
-		indices.push(vertices.length / 3 - 26 + 1);
-		indices.push(vertices.length / 3 - 26 + 14);
-		indices.push(vertices.length / 3 - 26 + 25);
 	}
-
 	//recalculate normals for the lastest 2 circles
 	calculateNormals();
  
@@ -199,52 +214,55 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 	console.log(normals);
 
 	gl.clearColor(0.5,0.5,0.5, 1.0);
-	gl.clear(gl.COLOR_BUFFER_BIT);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0);
 }
 
 function calculateNormals(){
+	for(i = 0; i < vertices.length; i++){
+		normals[i] = 0;
+	}
+	
 	var x = []; //first vector
 	var y = []; //first vector
 	var n = []; //result normal vector
-	if(vertices.length > 39){
-		for(i = 3; i <= 36; i+=3){
-			x[0] = vertices[vertices.length - 78 + i] - vertices[vertices.length - 39 + i];
-			x[1] = vertices[vertices.length - 39 + 1 + i] - vertices[vertices.length - 39 + 1 + i];
-			x[2] = vertices[vertices.length - 39 + 2 + i] - vertices[vertices.length - 39 + 2 + i];
-			y[0] = vertices[vertices.length - 78 + 3 + i] - vertices[vertices.length - 78 + i];
-			y[1] = vertices[vertices.length - 78 + 4 + i] - vertices[vertices.length - 78 + 1 + i];
-			y[2] = vertices[vertices.length - 78 + 5 + i] - vertices[vertices.length - 78 + 2 + i];
+	if(vertices.length > 75){
+		for(i = 3; i <= 69; i+=6){
+			x[0] = vertices[vertices.length - 150 + i] - vertices[vertices.length - 75 + i];
+			x[1] = vertices[vertices.length - 75 + 1 + i] - vertices[vertices.length - 75 + 1 + i];
+			x[2] = vertices[vertices.length - 75 + 2 + i] - vertices[vertices.length - 75 + 2 + i];
+			y[0] = vertices[vertices.length - 150 + 3 + i] - vertices[vertices.length - 150 + i];
+			y[1] = vertices[vertices.length - 150 + 4 + i] - vertices[vertices.length - 150 + 1 + i];
+			y[2] = vertices[vertices.length - 150 + 5 + i] - vertices[vertices.length - 150 + 2 + i];
 			n = crossProduct(x,y);
-			normals[vertices.length - 78 + i] = n[0];
-			normals[vertices.length - 78 + i + 1] = n[1];
-			normals[vertices.length - 78 + i + 2] = n[2];
-			normals[vertices.length - 78 + i + 3] = n[0];
-			normals[vertices.length - 78 + i + 4] = n[1];
-			normals[vertices.length - 78 + i + 5] = n[2];
-			normals[vertices.length - 39 + i] = n[0];
-			normals[vertices.length - 39 + i + 1] = n[1];
-			normals[vertices.length - 39 + i + 2] = n[2];
+			normals[vertices.length - 150 + i] = n[0];
+			normals[vertices.length - 150 + i + 1] = n[1];
+			normals[vertices.length - 150 + i + 2] = n[2];
+			normals[vertices.length - 150 + i + 3] = n[0];
+			normals[vertices.length - 150 + i + 4] = n[1];
+			normals[vertices.length - 150 + i + 5] = n[2];
+			normals[vertices.length - 75 + i] = n[0];
+			normals[vertices.length - 75 + i + 1] = n[1];
+			normals[vertices.length - 75 + i + 2] = n[2];
 		}
-		console.log(vertices.length - 39 + i + 2);
-		if(vertices.length > 78){
-			for(i = 3; i <= 36; i+=3){
-				x[0] = vertices[vertices.length - 156 + i] - vertices[vertices.length - 117 + i];
-				x[1] = vertices[vertices.length - 117 + 1 + i] - vertices[vertices.length - 117 + 1 + i];
-				x[2] = vertices[vertices.length - 117 + 2 + i] - vertices[vertices.length - 117 + 2 + i];
-				y[0] = vertices[vertices.length - 156 + 3 + i] - vertices[vertices.length - 156 + i];
-				y[1] = vertices[vertices.length - 156 + 4 + i] - vertices[vertices.length - 156 + 1 + i];
-				y[2] = vertices[vertices.length - 156 + 5 + i] - vertices[vertices.length - 156 + 2 + i];
+		if(vertices.length > 150){
+			for(i = 3; i <= 69; i+=6){
+				x[0] = vertices[vertices.length - 300 + i] - vertices[vertices.length - 225 + i];
+				x[1] = vertices[vertices.length - 225 + 1 + i] - vertices[vertices.length - 225 + 1 + i];
+				x[2] = vertices[vertices.length - 225 + 2 + i] - vertices[vertices.length - 225 + 2 + i];
+				y[0] = vertices[vertices.length - 300 + 3 + i] - vertices[vertices.length - 300 + i];
+				y[1] = vertices[vertices.length - 300 + 4 + i] - vertices[vertices.length - 300 + 1 + i];
+				y[2] = vertices[vertices.length - 300 + 5 + i] - vertices[vertices.length - 300 + 2 + i];
 				n = crossProduct(x,y);
-				normals[vertices.length - 156 + i] = n[0];
-				normals[vertices.length - 156 + i + 1] = n[1];
-				normals[vertices.length - 156 + i + 2] = n[2];
-				normals[vertices.length - 156 + i + 3] = n[0];
-				normals[vertices.length - 156 + i + 4] = n[1];
-				normals[vertices.length - 156 + i + 5] = n[2];
-				normals[vertices.length - 117 + i] = n[0];
-				normals[vertices.length - 117 + i + 1] = n[1];
-				normals[vertices.length - 117 + i + 2] = n[2];
+				normals[vertices.length - 300 + i] = n[0];
+				normals[vertices.length - 300 + i + 1] = n[1];
+				normals[vertices.length - 300 + i + 2] = n[2];
+				normals[vertices.length - 300 + i + 3] = n[0];
+				normals[vertices.length - 300 + i + 4] = n[1];
+				normals[vertices.length - 300 + i + 5] = n[2];
+				normals[vertices.length - 255 + i] = n[0];
+				normals[vertices.length - 255 + i + 1] = n[1];
+				normals[vertices.length - 255 + i + 2] = n[2];
 			}
 		}
 	}
