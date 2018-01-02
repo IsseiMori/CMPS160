@@ -219,9 +219,6 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 }
 
 function calculateNormals(){
-	for(i = 0; i < vertices.length; i++){
-		normals[i] = 0;
-	}
 	
 	var x = []; //first vector
 	var y = []; //first vector
@@ -244,6 +241,9 @@ function calculateNormals(){
 			normals[vertices.length - 75 + i] = n[0];
 			normals[vertices.length - 75 + i + 1] = n[1];
 			normals[vertices.length - 75 + i + 2] = n[2];
+			normals[vertices.length - 75 + i + 3] = n[0];
+			normals[vertices.length - 75 + i + 4] = n[1];
+			normals[vertices.length - 75 + i + 5] = n[2];
 		}
 		if(vertices.length > 150){
 			for(i = 3; i <= 69; i+=6){
@@ -260,9 +260,12 @@ function calculateNormals(){
 				normals[vertices.length - 300 + i + 3] = n[0];
 				normals[vertices.length - 300 + i + 4] = n[1];
 				normals[vertices.length - 300 + i + 5] = n[2];
-				normals[vertices.length - 255 + i] = n[0];
-				normals[vertices.length - 255 + i + 1] = n[1];
-				normals[vertices.length - 255 + i + 2] = n[2];
+				normals[vertices.length - 225 + i] = n[0];
+				normals[vertices.length - 225 + i + 1] = n[1];
+				normals[vertices.length - 225 + i + 2] = n[2];
+				normals[vertices.length - 225 + i + 3] = n[0];
+				normals[vertices.length - 225 + i + 4] = n[1];
+				normals[vertices.length - 225 + i + 5] = n[2];
 			}
 		}
 	}
