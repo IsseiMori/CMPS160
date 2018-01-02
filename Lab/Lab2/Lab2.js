@@ -53,7 +53,8 @@ function main(){
 	}
 
 	//set lightDirection
-	var lightDirection = new Vector3([0.5, 3.0, 4.0]);
+	var lightDirection = new Vector3([0.5, -2.0, 4.0]);
+	//var lightDirection = new Vector3([0.0, 0.0, -10.0]);
 	lightDirection.normalize();
 	gl.uniform3fv(u_LightDirection, lightDirection.elements);
 
@@ -232,6 +233,9 @@ function calculateNormals(){
 			y[1] = vertices[vertices.length - 150 + 4 + i] - vertices[vertices.length - 150 + 1 + i];
 			y[2] = vertices[vertices.length - 150 + 5 + i] - vertices[vertices.length - 150 + 2 + i];
 			n = crossProduct(x,y);
+			n[0] = -n[0];
+			n[1] = -n[1];
+			n[2] = -n[2];
 			normals[vertices.length - 150 + i] = n[0];
 			normals[vertices.length - 150 + i + 1] = n[1];
 			normals[vertices.length - 150 + i + 2] = n[2];
@@ -254,6 +258,9 @@ function calculateNormals(){
 				y[1] = vertices[vertices.length - 300 + 4 + i] - vertices[vertices.length - 300 + 1 + i];
 				y[2] = vertices[vertices.length - 300 + 5 + i] - vertices[vertices.length - 300 + 2 + i];
 				n = crossProduct(x,y);
+				n[0] = -n[0];
+				n[1] = -n[1];
+				n[2] = -n[2];
 				normals[vertices.length - 300 + i] = n[0];
 				normals[vertices.length - 300 + i + 1] = n[1];
 				normals[vertices.length - 300 + i + 2] = n[2];
