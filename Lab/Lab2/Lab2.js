@@ -54,7 +54,6 @@ function main(){
 
 	//set lightDirection
 	var lightDirection = new Vector3([0.5, -2.0, 4.0]);
-	//var lightDirection = new Vector3([0.0, 0.0, -10.0]);
 	lightDirection.normalize();
 	gl.uniform3fv(u_LightDirection, lightDirection.elements);
 
