@@ -2,7 +2,7 @@
 Github.io  
 https://isseimori.github.io/CMPS160/
 
-WebGL programming for CS160 at University of California Santa Cruz
+WebGL programming for CS160 at University of California Santa Cruz 2017 fall
 
 practice  
 ->Sample code of WebGL Programming Guide by Kouichi Matsuda
