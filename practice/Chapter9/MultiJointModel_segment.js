@@ -312,6 +312,3 @@ function pushMatrix(m){
 function popMatrix(){
 	return g_matrixStack.pop();
 }
-
-
-
