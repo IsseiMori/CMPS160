@@ -1,12 +1,14 @@
 var VSHADER_SOURCE = 
 	'attribute vec4 a_Position;\n' +
 	'attribute vec4 a_Normal;\n' +
+	'attribute vec4 a_Color;\n' +
 	'uniform vec3 u_LightDirection;\n' +
 	'varying vec4 v_Color;\n' +
 	'void main(){\n' + 
 	'	gl_Position = a_Position;\n' +
-	'	float nDotL = max(dot(u_LightDirection, normalize(a_Normal.xyz)),0.0);\n' +
-	'	v_Color = vec4(vec3(0.0, 1.0, 0.0) * nDotL, 1.0);\n' +
+	//'	float nDotL = max(dot(u_LightDirection, normalize(a_Normal.xyz)),0.0);\n' +
+	//'	v_Color = vec4(vec3(0.0, 1.0, 0.0) * nDotL, 1.0);\n' +
+	'	v_Color = a_Color;\n' +
 	'}\n';
 
 var FSHADER_SOURCE = 
@@ -41,11 +43,13 @@ function main(){
 	var indexBuffer = gl.createBuffer();
 	var verticesBuffer = gl.createBuffer();
 	var normalBuffer = gl.createBuffer();
+	var colorBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
 	//get Shader attributes
 	var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
 	var a_Normal = gl.getAttribLocation(gl.program, 'a_Normal');
+	var a_Color = gl.getAttribLocation(gl.program, 'a_Color');
 	var u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
 	if(u_LightDirection < 0){
 		console.log("failed to get the storage location");
@@ -53,14 +57,14 @@ function main(){
 	}
 
 	//set lightDirection
-	var lightDirection = new Vector3([0.5, -2.0, 4.0]);
+	var lightDirection = new Vector3([1.0, 1.0, 1.0]);
 	lightDirection.normalize();
 	gl.uniform3fv(u_LightDirection, lightDirection.elements);
 
 	makeCircle(canvas);
 
 	canvas.onmousedown = function(ev){
-		click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Normal);
+		click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Position, a_Normal, a_Color, lightDirection);
 	}
 
 	gl.clearColor(0.5,0.5,0.5,1.0);
@@ -108,8 +112,11 @@ var indices = [];
 //
 //
 var normals = [];
+var colors = [0.0,1.0,0.0];
+var colorsFlat = [];
+var colorsSmooth = [];
 
-function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Normal){
+function click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Position, a_Normal, a_Color, lightDirection){
 	//convert canvas coordinate to webgl coordinate
 	var x = ev.clientX;
 	var y = ev.clientY;
@@ -187,6 +194,8 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 	}
 	//recalculate normals for the lastest 2 circles
 	calculateNormals();
+
+	calculateFlatShadingColor(lightDirection);
  
  	//store the center point
 	prevPoint[0] = x;
@@ -205,6 +214,11 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 	gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(a_Normal);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsFlat), gl.STATIC_DRAW);
+	gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(a_Color);
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
@@ -212,10 +226,42 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, a_Position, a_Norma
 	console.log(vertices);
 	console.log(indices);
 	console.log(normals);
+	console.log(colorsFlat);
 
 	gl.clearColor(0.5,0.5,0.5, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0);
+}
+
+function calculateFlatShadingColor(lightDirection){
+	var n = 0;
+	if(vertices.length > 75) n = 2;
+	if(vertices.length > 150) n = 4;
+
+	for(j = 1; j <= n; j++){
+		for(i = 3; i <= 72; i+=3){
+			var len = vertices.length;
+
+			//normal
+			v_Normal = new Vector3([normals[len - 75 * j + i], normals[len - 75 * j + i + 1], normals[len - 75 * j + i + 2]]);
+
+			//normalize normal vector
+			v_Normal.normalize();
+
+			//dot product
+			var nDotL = [lightDirection.elements[0] * v_Normal.elements[0], lightDirection.elements[1] * v_Normal.elements[1], lightDirection.elements[2] * v_Normal.elements[2]];
+
+			//set nDotL minimum value to 0
+			if(nDotL[0] < 0.0) nDotL[0] = 0.0;
+			if(nDotL[1] < 0.0) nDotL[1] = 0.0;
+			if(nDotL[2] < 0.0) nDotL[2] = 0.0;
+
+			//store color to color array
+			colorsFlat[len - 75 * j + i] = colors[0] * nDotL[0];
+			colorsFlat[len - 75 * j + i + 1] = colors[1] * nDotL[1];
+			colorsFlat[len - 75 * j + i + 2] = colors[2] * nDotL[2];
+		}
+	}
 }
 
 function calculateNormals(){
@@ -232,9 +278,6 @@ function calculateNormals(){
 			y[1] = vertices[vertices.length - 150 + 4 + i] - vertices[vertices.length - 150 + 1 + i];
 			y[2] = vertices[vertices.length - 150 + 5 + i] - vertices[vertices.length - 150 + 2 + i];
 			n = crossProduct(x,y);
-			n[0] = -n[0];
-			n[1] = -n[1];
-			n[2] = -n[2];
 			normals[vertices.length - 150 + i] = n[0];
 			normals[vertices.length - 150 + i + 1] = n[1];
 			normals[vertices.length - 150 + i + 2] = n[2];
@@ -257,9 +300,6 @@ function calculateNormals(){
 				y[1] = vertices[vertices.length - 300 + 4 + i] - vertices[vertices.length - 300 + 1 + i];
 				y[2] = vertices[vertices.length - 300 + 5 + i] - vertices[vertices.length - 300 + 2 + i];
 				n = crossProduct(x,y);
-				n[0] = -n[0];
-				n[1] = -n[1];
-				n[2] = -n[2];
 				normals[vertices.length - 300 + i] = n[0];
 				normals[vertices.length - 300 + i + 1] = n[1];
 				normals[vertices.length - 300 + i + 2] = n[2];
