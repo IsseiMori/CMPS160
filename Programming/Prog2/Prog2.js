@@ -4,8 +4,12 @@ var VSHADER_SOURCE =
 	'attribute vec4 a_Color;\n' +
 	'uniform vec3 u_LightDirection;\n' +
 	'varying vec4 v_Color;\n' +
+	'varying vec4 v_Position;\n' +
+	'varying vec4 v_Normal;\n' +
 	'void main(){\n' + 
 	'	gl_Position = a_Position;\n' +
+	'	v_Position = a_Position;\n' +
+	'	v_Normal = normalize(a_Normal);\n' +
 	//'	float nDotL = max(dot(u_LightDirection, normalize(a_Normal.xyz)),0.0);\n' +
 	//'	v_Color = vec4(vec3(0.0, 1.0, 0.0) * nDotL, 1.0);\n' +
 	'	v_Color = a_Color;\n' +
@@ -14,8 +18,13 @@ var VSHADER_SOURCE =
 var FSHADER_SOURCE = 
 	'precision mediump float;\n' +
 	'varying vec4 v_Color;\n' +
+	'varying vec4 v_Position;\n' +
+	'varying vec4 v_Normal;\n' +
 	'void main(){\n' + 
-	'	gl_FragColor = v_Color;\n' +
+	'	vec3 lightWeighting;\n' +
+	'	vec3 eyeDirection = normalize(- v_Position.xyz);\n' +
+	'	lightWeighting = v_Color.rgb;\n' +
+	'	gl_FragColor = vec4(lightWeighting, 1.0);\n' +
 	'}\n';
 
 function main(){
@@ -196,6 +205,7 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Posi
 	calculateNormals();
 
 	calculateFlatShadingColor(lightDirection);
+	calculateSmoothShadingColor(lightDirection);
  
  	//store the center point
 	prevPoint[0] = x;
@@ -216,7 +226,8 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Posi
 	gl.enableVertexAttribArray(a_Normal);
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsFlat), gl.STATIC_DRAW);
+	//gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsFlat), gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsSmooth), gl.STATIC_DRAW);
 	gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(a_Color);
 	
@@ -226,7 +237,7 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Posi
 	console.log(vertices);
 	console.log(indices);
 	console.log(normals);
-	console.log(colorsFlat);
+	console.log(colorsSmooth);
 
 	gl.clearColor(0.5,0.5,0.5, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -243,7 +254,7 @@ function calculateFlatShadingColor(lightDirection){
 			var len = vertices.length;
 
 			//normal
-			v_Normal = new Vector3([normals[len - 75 * j + i], normals[len - 75 * j + i + 1], normals[len - 75 * j + i + 2]]);
+			var v_Normal = new Vector3([normals[len - 75 * j + i], normals[len - 75 * j + i + 1], normals[len - 75 * j + i + 2]]);
 
 			//normalize normal vector
 			v_Normal.normalize();
@@ -264,11 +275,111 @@ function calculateFlatShadingColor(lightDirection){
 	}
 }
 
+function calculateSmoothShadingColor(lightDirection){
+	var n1 = []; //first normal vector
+	var n2 = []; //second normal vector
+	var n3 = []; //third normal vector
+	var n4 = []; //forth normal vector
+	var v_Normal;
+	var len = vertices.length;
+
+	var n = 0;
+	if(vertices.length > 75) n = 2;
+
+	for(j = 1; j <= n; j++){
+		//skip 3rd loop
+		for(i = 6; i <= 72; i+=6){
+			n1[0] = normals[len - 75 * j + i];
+			n1[1] = normals[len - 75 * j + i + 1];
+			n1[2] = normals[len - 75 * j + i + 2];
+			
+			//store the first vertex if i is at the last vertex
+			if(i != 72){
+				n2[0] = normals[len - 75 * j + i + 3];
+				n2[1] = normals[len - 75 * j + i + 4];
+				n2[2] = normals[len - 75 * j + i + 5];
+			}else{
+				n2[0] = normals[len - 75 * j];
+				n2[1] = normals[len - 75 * j + 1];
+				n2[2] = normals[len - 75 * j + 2];
+			}
+
+			//has joint
+			if(len >= 150 && j == 2){
+				n3[0] = normals[len - 75 * 3 + i];
+				n3[1] = normals[len - 75 * 3 + i + 1];
+				n3[2] = normals[len - 75 * 3 + i + 2];
+				n4[0] = normals[len - 75 * 3 + i];
+				n4[1] = normals[len - 75 * 3 + i + 1];
+				n4[2] = normals[len - 75 * 3 + i + 2];
+
+				if(i != 72){
+					n4[0] = normals[len - 75 * 3 + i + 3];
+					n4[1] = normals[len - 75 * 3 + i + 4];
+					n4[2] = normals[len - 75 * 3 + i + 5];
+				}else{
+					n4[0] = normals[len - 75 * 3];
+					n4[1] = normals[len - 75 * 3 + 1];
+					n4[2] = normals[len - 75 * 3 + 2];
+				}
+			}
+			
+			//store the average of n1 n2 as a resulting normal vector
+			if(j == 2) v_Normal = new Vector3([(n1[0]+n2[0]+n3[0]+n4[0])/4, (n1[1]+n2[1]+n3[1]+n4[1])/4, (n1[2]+n2[2]+n3[2]+n4[2])/4]);
+			v_Normal = new Vector3([(n1[0]+n2[0])/2, (n1[1]+n2[1])/2, (n1[2]+n2[2])/2]);
+			console.log((n1[1]+n2[1])/2);
+
+			//normalize
+			v_Normal.normalize();
+
+			var nDotL = [lightDirection.elements[0] * v_Normal.elements[0], lightDirection.elements[1] * v_Normal.elements[1], lightDirection.elements[2] * v_Normal.elements[2]];
+
+			//set nDotL minimum value to 0
+			if(nDotL[0] < 0.0) nDotL[0] = 0.0;
+			if(nDotL[1] < 0.0) nDotL[1] = 0.0;
+			if(nDotL[2] < 0.0) nDotL[2] = 0.0;
+
+			colorsSmooth[len - 75 * j + i] = colors[0] * nDotL[0];
+			colorsSmooth[len - 75 * j + i + 1] = colors[1] * nDotL[1];
+			colorsSmooth[len - 75 * j + i + 2] = colors[2] * nDotL[2];
+
+			//back to the first vertex
+			if(i != 72){
+				colorsSmooth[len - 75 * j + i + 3] = colors[0] * nDotL[0];
+				colorsSmooth[len - 75 * j + i + 4] = colors[1] * nDotL[1];
+				colorsSmooth[len - 75 * j + i + 5] = colors[2] * nDotL[2];
+			}else{
+				colorsSmooth[len - 75 * j] = colors[0] * nDotL[0];
+				colorsSmooth[len - 75 * j + 1] = colors[1] * nDotL[1];
+				colorsSmooth[len - 75 * j + 2] = colors[2] * nDotL[2];
+			}
+
+			//2nd loop shares colors with 3rd loop
+			if(len >= 150 && j == 2){
+				colorsSmooth[len - 75 * 3 + i] = colors[0] * nDotL[0];
+				colorsSmooth[len - 75 * 3 + i + 1] = colors[1] * nDotL[1];
+				colorsSmooth[len - 75 * 3 + i + 2] = colors[2] * nDotL[2];
+
+				//back to the first vertex
+				if(i != 72){
+					colorsSmooth[len - 75 * 3 + i + 3] = colors[0] * nDotL[0];
+					colorsSmooth[len - 75 * 3 + i + 4] = colors[1] * nDotL[1];
+					colorsSmooth[len - 75 * 3 + i + 5] = colors[2] * nDotL[2];
+				}else{
+					colorsSmooth[len - 75] = colors[0] * nDotL[0];
+					colorsSmooth[len - 75 * 3 + 1] = colors[1] * nDotL[1];
+					colorsSmooth[len - 75 * 3 + 2] = colors[2] * nDotL[2];
+				}
+			}
+		}
+	}
+}
+
 function calculateNormals(){
 	
 	var x = []; //first vector
-	var y = []; //first vector
-	var n = []; //result normal vector
+	var y = []; //second vector
+	var n = []; //resulting normal vector
 	if(vertices.length > 75){
 		for(i = 3; i <= 69; i+=6){
 			x[0] = vertices[vertices.length - 150 + i] - vertices[vertices.length - 75 + i];
