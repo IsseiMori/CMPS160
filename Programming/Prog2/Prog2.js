@@ -2,14 +2,14 @@ var VSHADER_SOURCE =
 	'attribute vec4 a_Position;\n' +
 	'attribute vec4 a_Normal;\n' +
 	'attribute vec4 a_Color;\n' +
-	'uniform vec3 u_LightDirection;\n' +
+	//'uniform vec3 u_LightDirection;\n' +
 	'varying vec4 v_Color;\n' +
 	'varying vec4 v_Position;\n' +
 	'varying vec4 v_Normal;\n' +
 	'void main(){\n' + 
 	'	gl_Position = a_Position;\n' +
 	'	v_Position = a_Position;\n' +
-	'	v_Normal = normalize(a_Normal);\n' +
+	'	v_Normal = a_Normal;\n' +
 	//'	float nDotL = max(dot(u_LightDirection, normalize(a_Normal.xyz)),0.0);\n' +
 	//'	v_Color = vec4(vec3(0.0, 1.0, 0.0) * nDotL, 1.0);\n' +
 	'	v_Color = a_Color;\n' +
@@ -20,11 +20,21 @@ var FSHADER_SOURCE =
 	'varying vec4 v_Color;\n' +
 	'varying vec4 v_Position;\n' +
 	'varying vec4 v_Normal;\n' +
+	'uniform vec3 u_LightDirection;\n' +
+	'float specular;\n' +
+	'const vec3 Ka = vec3(0,0,0.2);\n' +
+	'const vec3 Kd = vec3(1,0,0);\n' +
+	'const vec3 Ks = vec3(0,1,0);\n' +
+	'const float Ns = 1.0;\n' +
 	'void main(){\n' + 
 	'	vec3 lightWeighting;\n' +
 	'	vec3 eyeDirection = normalize(- v_Position.xyz);\n' +
-	'	lightWeighting = v_Color.rgb;\n' +
-	'	gl_FragColor = vec4(lightWeighting, 1.0);\n' +
+	'	vec3 reflectionDirection = reflect(normalize(u_LightDirection), normalize(v_Normal.xyz));\n' +
+	'	specular = pow(min(dot(reflectionDirection, normalize(eyeDirection)), 0.0), Ns);\n' +
+	'	gl_FragColor = v_Color;\n' +
+	'	gl_FragColor.rgb += Ks * specular;\n' +
+	'	gl_FragColor.rgb += Ka;\n' +
+	'	gl_FragColor.rgb = min(gl_FragColor.rgb, 1.0);\n' +
 	'}\n';
 
 function main(){
