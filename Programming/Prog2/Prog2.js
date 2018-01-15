@@ -39,6 +39,8 @@ var FSHADER_SOURCE =
 	'}\n';
 
 function main(){
+	var isSmoothOn = false;
+
 	var canvas = document.getElementById('webgl');
 	if(!canvas){
 		console.log("failed to retrive <canvas> element");
@@ -87,12 +89,28 @@ function main(){
 	makeCircle(canvas);
 
 	canvas.onmousedown = function(ev){
-		click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Position, a_Normal, a_Color, lightDirection);
+		click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Position, a_Normal, a_Color, lightDirection, isSmoothOn);
 	}
 
 	document.getElementById('specular-checkbox').onclick = function(){
 		if(this.checked == true) gl.uniform1i(isSpecularOn, 1);
 		else gl.uniform1i(isSpecularOn, 0);
+
+		//draw
+		gl.clearColor(0.5,0.5,0.5, 1.0);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0);
+	};
+
+	document.getElementById('smooth-checkbox').onclick = function(){
+		if(this.checked == true) isSmoothOn = true;
+		else isSmoothOn = false;
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+		if(isSmoothOn) gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsSmooth), gl.STATIC_DRAW);
+		else gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsFlat), gl.STATIC_DRAW);
+		gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(a_Color);
 
 		//draw
 		gl.clearColor(0.5,0.5,0.5, 1.0);
@@ -149,7 +167,7 @@ var colors = [0.0,1.0,0.0];
 var colorsFlat = [];
 var colorsSmooth = [];
 
-function click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Position, a_Normal, a_Color, lightDirection){
+function click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Position, a_Normal, a_Color, lightDirection, isSmoothOn){
 	//convert canvas coordinate to webgl coordinate
 	var x = ev.clientX;
 	var y = ev.clientY;
@@ -250,8 +268,8 @@ function click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Posi
 	gl.enableVertexAttribArray(a_Normal);
 
 	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	//gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsFlat), gl.STATIC_DRAW);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsSmooth), gl.STATIC_DRAW);
+	if(isSmoothOn) gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsSmooth), gl.STATIC_DRAW);
+	else gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorsFlat), gl.STATIC_DRAW);
 	gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(a_Color);
 	
