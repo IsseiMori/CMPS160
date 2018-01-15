@@ -21,6 +21,7 @@ var FSHADER_SOURCE =
 	'varying vec4 v_Position;\n' +
 	'varying vec4 v_Normal;\n' +
 	'uniform vec3 u_LightDirection;\n' +
+	'uniform int isSpecularOn;\n' +
 	'float specular;\n' +
 	'const vec3 Ka = vec3(0,0,0.2);\n' +
 	'const vec3 Kd = vec3(1,0,0);\n' +
@@ -32,7 +33,7 @@ var FSHADER_SOURCE =
 	'	vec3 reflectionDirection = reflect(normalize(u_LightDirection), normalize(v_Normal.xyz));\n' +
 	'	specular = pow(min(dot(reflectionDirection, normalize(eyeDirection)), 0.0), Ns);\n' +
 	'	gl_FragColor = v_Color;\n' +
-	'	gl_FragColor.rgb += Ks * specular;\n' +
+	'	if(isSpecularOn == 1) gl_FragColor.rgb += Ks * specular;\n' +
 	'	gl_FragColor.rgb += Ka;\n' +
 	'	gl_FragColor.rgb = min(gl_FragColor.rgb, 1.0);\n' +
 	'}\n';
@@ -70,6 +71,7 @@ function main(){
 	var a_Normal = gl.getAttribLocation(gl.program, 'a_Normal');
 	var a_Color = gl.getAttribLocation(gl.program, 'a_Color');
 	var u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
+	var isSpecularOn = gl.getUniformLocation(gl.program, 'isSpecularOn');
 	if(u_LightDirection < 0){
 		console.log("failed to get the storage location");
 		return;
@@ -80,11 +82,23 @@ function main(){
 	lightDirection.normalize();
 	gl.uniform3fv(u_LightDirection, lightDirection.elements);
 
+	gl.uniform1i(isSpecularOn, 0);
+
 	makeCircle(canvas);
 
 	canvas.onmousedown = function(ev){
 		click(ev, gl, canvas, verticesBuffer, normalBuffer, colorBuffer, a_Position, a_Normal, a_Color, lightDirection);
 	}
+
+	document.getElementById('specular-checkbox').onclick = function(){
+		if(this.checked == true) gl.uniform1i(isSpecularOn, 1);
+		else gl.uniform1i(isSpecularOn, 0);
+
+		//draw
+		gl.clearColor(0.5,0.5,0.5, 1.0);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_BYTE, 0);
+	};
 
 	gl.clearColor(0.5,0.5,0.5,1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
